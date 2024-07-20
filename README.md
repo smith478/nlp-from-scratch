@@ -16,7 +16,25 @@ Here are some resources we will be using:
 
 ## Getting started
 
-### Docker
+### Conda/pip (CPU)
+
+This option will work if you want to run everything from CPU.
+
+First create a Python 3.11 environment with conda
+
+```bash
+conda create -n nlp-from-scratch python==3.11
+```
+
+Next use pip to install all of the library dependencies
+
+```bash
+pip install -r requirements_cpu.txt
+```
+
+### Docker (GPU)
+
+This option works well to handle GPU related dependencies with Docker.
 
 The docker image can be built using `./Dockerfile`. You can build it using the following command, run from the root directory
 
