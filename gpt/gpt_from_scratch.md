@@ -14,3 +14,5 @@ We begin by creating the main components or building blocks of the GPT-2 model. 
 * `h` - hidden state block that contains the multi-headed attention, feed forward layers, and residual connections
 * `ln_f` - layer normalization
 * `lm_head` - the output of the model that predicts the next token, i.e. the probability distribution over the vocabulary.
+
+The hidden state block largely follows the main attention block found in the attention is all you need paper with some modifications on the order of operations and most importantly updating the residual or skip connection stream to allow back propogation to more easily send gradients deeper through the network.
