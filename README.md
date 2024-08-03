@@ -14,6 +14,12 @@ Here are some resources we will be using:
 - [Medium](https://medium.com/data-and-beyond/complete-guide-to-building-bert-model-from-sratch-3e6562228891)
 - [Towards data science](https://towardsdatascience.com/how-to-train-a-bert-model-from-scratch-72cfce554fc6)
 
+## Additional resources
+- [Lightning-AI](https://github.com/Lightning-AI)
+    - [litgpt](https://github.com/Lightning-AI/litgpt)
+    - [pytorch-lightning](https://github.com/Lightning-AI/pytorch-lightning)
+- [LLMs from scratch](https://github.com/rasbt/LLMs-from-scratch)
+
 ## Getting started
 
 ### Conda/pip (CPU)
@@ -60,3 +66,7 @@ Host machine access this url:
 ```bash
 localhost:8888/<YOUR TREE HERE>
 ```
+
+## Data
+
+To test out a number of different methods and techniques we will use the [Reuters dataset](https://kdd.ics.uci.edu/databases/reuters21578/reuters21578.html). This will be in the `data/` directory.
