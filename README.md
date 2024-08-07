@@ -69,4 +69,10 @@ localhost:8888/<YOUR TREE HERE>
 
 ## Data
 
-To test out a number of different methods and techniques we will use the [Reuters dataset](https://kdd.ics.uci.edu/databases/reuters21578/reuters21578.html). This will be in the `data/` directory.
+To test out a number of different methods and techniques we will use the [Reuters dataset](https://kdd.ics.uci.edu/databases/reuters21578/reuters21578.html). This will be in the `data/` directory. The Reuters dataset contains articles along with a list of topics assocated with each article. We will compare a few different modeling techniques to identify topics using the free text of the article. In particular we will compare:
+- Fine tune LLM as a multi-class, multi-label classification problem
+- Use retrieval augmented generation (RAG)
+- Train LLM from scratch on Reuters data
+    - Next token prediction like GPT
+    - Masked language predication like BERT
+- PEFT - Use LORA (or similar variant) to train efficiently
