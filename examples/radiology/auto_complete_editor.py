@@ -1,10 +1,18 @@
+import tiktoken
 import tkinter as tk
 from tkinter import filedialog
 import torch
-from transformers import GPT2Tokenizer
+from gpt2 import GPTModel
 
-# Assuming you have these imports and definitions from your training code
-from your_model_file import GPTModel, CONFIG
+CONFIG = {
+    "vocab_size": 50257,
+    "context_length": 256,
+    "emb_dim": 768,
+    "n_heads": 12,
+    "n_layers": 12,
+    "drop_rate": 0.1,
+    "qkv_bias": False
+}
 
 class AutoCompleteEditor:
     def __init__(self, master):
@@ -14,10 +22,10 @@ class AutoCompleteEditor:
         # Load model and tokenizer
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = GPTModel(CONFIG)
-        self.model.load_state_dict(torch.load("../../models/model.pth", map_location=self.device, weights_only=True))
+        self.model.load_state_dict(torch.load("../../models/model_124M.pth", map_location=self.device, weights_only=True))
         self.model.to(self.device)
         self.model.eval()
-        self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        self.tokenizer = tiktoken.get_encoding("gpt2")
 
         # Create text widget
         self.text = tk.Text(master, wrap='word')
@@ -44,14 +52,14 @@ class AutoCompleteEditor:
         text = self.text.get("1.0", tk.END).strip()
         
         # Tokenize the text
-        inputs = self.tokenizer.encode(text, return_tensors='pt').to(self.device)
+        inputs = self.tokenizer.encode(text, allowed_special={'<|endoftext|>'})
         
         # Generate prediction
         with torch.no_grad():
             outputs = self.model.generate(inputs, max_length=inputs.shape[1] + 20, num_return_sequences=1, 
                                           do_sample=True, top_k=50, top_p=0.95, temperature=0.7)
         
-        predicted_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        predicted_text = self.tokenizer.decode(outputs[0])
         
         # Get the suggestion (new text only)
         self.suggestion = predicted_text[len(text):].strip()
