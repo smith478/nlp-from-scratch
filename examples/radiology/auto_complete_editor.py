@@ -8,30 +8,42 @@ import os
 from datetime import datetime
 import uuid
 
-MODEL = "355M"
-
-if MODEL == "124M":
-    CONFIG = {
+MODEL_CONFIGS = {
+    "124M": {
         "vocab_size": 50257,
         "context_length": 256,
         "emb_dim": 768,
         "n_heads": 12,
         "n_layers": 12,
         "drop_rate": 0.1,
-        "qkv_bias": False
-    }
-    model_path = "../../models/model_124M.pth"
-elif MODEL == "355M":
-    CONFIG = {
+        "qkv_bias": False,
+        "model_path": "../../models/model_124M.pth"
+    },
+    "355M": {
         "vocab_size": 50257,
         "context_length": 256,
         "emb_dim": 1024,
         "n_heads": 16,
         "n_layers": 24,
         "drop_rate": 0.1,
-        "qkv_bias": False
+        "qkv_bias": False,
+        "model_path": "../../models/model_355M.pth"
+    },
+    "774M": {
+        "vocab_size": 50257,
+        "context_length": 256,
+        "emb_dim": 1280,
+        "n_heads": 20,
+        "n_layers": 36,
+        "drop_rate": 0.1,
+        "qkv_bias": False,
+        "model_path": "../../models/model_774M.pth"
     }
-    model_path = "../../models/model_355M.pth"
+}
+
+MODEL = "774M"
+CONFIG = MODEL_CONFIGS[MODEL]
+model_path = CONFIG.pop("model_path")
 
 
 # Global variable for wait time
@@ -41,25 +53,22 @@ ESC_INFERENCE_WAIT_TIME = 8000  # milliseconds
 DICTATION_PAUSE_TIME = 2000  # milliseconds
 
 def generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=None, eos_id=None):
+    idx = idx.to(torch.long)  # Ensure idx is of type long
     for _ in range(max_new_tokens):
         idx_cond = idx[:, -context_size:]
         with torch.no_grad():
-            logits = model(idx_cond)
-        logits = logits[:, -1, :]
+            logits = model(idx_cond)[:, -1, :]
 
         if top_k is not None:
-            top_logits, _ = torch.topk(logits, top_k)
-            min_val = top_logits[:, -1]
-            logits = torch.where(logits < min_val, torch.tensor(float('-inf')).to(logits.device), logits)
+            logits = torch.where(logits < torch.topk(logits, top_k)[0][:, -1, None], torch.tensor(float('-inf')).to(logits.device), logits)
 
         if temperature > 0.0:
-            logits = logits / temperature
-            probs = torch.softmax(logits, dim=-1)
+            probs = torch.softmax(logits / temperature, dim=-1)
             idx_next = torch.multinomial(probs, num_samples=1)
         else:
             idx_next = torch.argmax(logits, dim=-1, keepdim=True)
 
-        if eos_id is not None and idx_next == eos_id:
+        if eos_id is not None and idx_next.item() == eos_id:
             break
 
         idx = torch.cat((idx, idx_next), dim=1)
@@ -68,7 +77,7 @@ def generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=No
 
 def text_to_token_ids(text, tokenizer):
     encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
-    encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+    encoded_tensor = torch.tensor(encoded, dtype=torch.long).unsqueeze(0)
     return encoded_tensor
 
 def token_ids_to_text(token_ids, tokenizer):
@@ -153,8 +162,8 @@ class AutoCompleteEditor:
             return
 
         text = self.text.get("1.0", tk.END).strip()
-        inputs = text_to_token_ids(text, self.tokenizer)
-        
+        inputs = text_to_token_ids(text, self.tokenizer).to(self.device)
+
         outputs = generate(
             model=self.model,
             idx=inputs,
@@ -163,7 +172,7 @@ class AutoCompleteEditor:
             top_k=40,
             temperature=0.7
         )
-        
+
         predicted_text = token_ids_to_text(outputs, self.tokenizer)
         
         self.suggestion = predicted_text[len(text):].strip()
@@ -235,6 +244,11 @@ class AutoCompleteEditor:
         self.text.delete("1.0", tk.END)
         self.current_id = self.generate_id()
         self.last_content = ""
+        self.suggestion = ""
+        self.waiting_for_action = False
+        self.last_action_was_escape = False
+        self.action_since_escape = True
+        self.schedule_inference()
 
 if __name__ == "__main__":
     root = tk.Tk()
