@@ -52,9 +52,15 @@ ORIGINAL_INFERENCE_WAIT_TIME = INFERENCE_WAIT_TIME
 ESC_INFERENCE_WAIT_TIME = 8000  # milliseconds
 DICTATION_PAUSE_TIME = 2000  # milliseconds
 
-def generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=None, eos_id=None):
+def generate(model, tokenizer, idx, max_new_tokens, context_size, temperature=0.0, top_k=None, eos_id=None):
     idx = idx.to(torch.long)  # Ensure idx is of type long
+    generated_tokens = 0
+    period_id = tokenizer.encode('.')[0]  # Get the token ID for the period character
+
     for _ in range(max_new_tokens):
+        if generated_tokens >= 40:
+            break
+
         idx_cond = idx[:, -context_size:]
         with torch.no_grad():
             logits = model(idx_cond)[:, -1, :]
@@ -72,6 +78,10 @@ def generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=No
             break
 
         idx = torch.cat((idx, idx_next), dim=1)
+        generated_tokens += 1
+
+        if idx_next.item() == period_id:
+            break
 
     return idx
 
@@ -104,6 +114,7 @@ class AutoCompleteEditor:
         self.text.bind('<Escape>', self.cancel_suggestion)
         self.text.bind('<KeyRelease>', self.on_cursor_move)
         self.text.bind('<Command-z>', self.undo_last_addition)
+        self.text.bind('<Key>', self.handle_key_press)
 
         self.save_button = tk.Button(master, text="Save", command=self.save_file)
         self.save_button.pack(side=tk.LEFT, padx=5)
@@ -122,6 +133,10 @@ class AutoCompleteEditor:
         self.last_action_was_escape = False
         self.action_since_escape = False
         self.last_added_text = ""
+
+    def handle_key_press(self, event):
+        if event.keysym != 'Tab' and self.suggestion:
+            self.cancel_suggestion()
 
     def is_cursor_at_end(self):
         cursor_position = self.text.index(tk.INSERT)
@@ -166,8 +181,9 @@ class AutoCompleteEditor:
 
         outputs = generate(
             model=self.model,
+            tokenizer=self.tokenizer,
             idx=inputs,
-            max_new_tokens=10,
+            max_new_tokens=40,
             context_size=CONFIG["context_length"],
             top_k=40,
             temperature=0.7
@@ -205,7 +221,7 @@ class AutoCompleteEditor:
             self.schedule_inference()
         return 'break'
 
-    def cancel_suggestion(self, event):
+    def cancel_suggestion(self):
         if self.suggestion:
             self.text.delete(self.suggestion_start, tk.END)
             self.suggestion = ""
@@ -214,7 +230,6 @@ class AutoCompleteEditor:
         self.action_since_escape = False
         global INFERENCE_WAIT_TIME
         INFERENCE_WAIT_TIME = ESC_INFERENCE_WAIT_TIME
-        return 'break'
 
     def undo_last_addition(self, event):
         if self.last_added_text:
