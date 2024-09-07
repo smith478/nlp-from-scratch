@@ -3,6 +3,11 @@ data/
 .DS_Store
 models/
 
+examples/radiology/peft-radiology*/*
+
+# Exclude .Trash-0 directory
+.Trash-0/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
