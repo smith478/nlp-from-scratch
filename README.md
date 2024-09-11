@@ -53,7 +53,7 @@ docker build . -f Dockerfile --rm -t llm-finetuning:latest
 First navigate to this repo on your local machine. Then run the container:
 
 ```bash
-docker run --gpus all --name nlp-from-scratch -it --rm -p 8888:8888 -p 8501:8501 -p 8000:8000 --entrypoint /bin/bash -w /nlp-from-scratch -v $(pwd):/nlp-from-scratch llm-finetuning:latest
+docker run --gpus all --name nlp-from-scratch -it --rm -p 8888:8888 -p 8501:8501 -p 8000:8000 --entrypoint /bin/bash -w /nlp-from-scratch -v $(pwd):/nlp-from-scratch -v ~/huggingface_models:/root/huggingface_models llm-finetuning:latest
 ```
 
 ### Run jupyter from the container
