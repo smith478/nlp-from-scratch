@@ -76,3 +76,7 @@ To test out a number of different methods and techniques we will use the [Reuter
     - Next token prediction like GPT
     - Masked language predication like BERT
 - PEFT - Use LORA (or similar variant) to train efficiently
+
+## TODO
+- [ ] Classification example (from scratch and fine tuned)
+- [ ] MLM based embedding model example (from scratch and fine tuned)
