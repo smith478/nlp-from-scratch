@@ -4,6 +4,7 @@ data/
 models/
 
 examples/radiology/peft-radiology*/*
+examples/radiology/evaluation_results.json
 
 # Exclude .Trash-0 directory
 .Trash-0/
